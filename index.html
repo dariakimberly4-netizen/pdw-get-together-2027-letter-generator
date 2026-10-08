@@ -15,11 +15,11 @@
 <section class="hero"><div class="brand"><div class="mark">PD</div><div><h1>Parkinson's Disease</h1><p>WARRIORS PHILIPPINES</p></div></div><p class="sub">Get-Together 2027 Sponsorship Letter Generator</p></section>
 <section class="card">
 <h2 style="margin-top:0">Recipient Tracker</h2>
-<div class="note auto"><b>Automatic Control Number:</b> New recipients are assigned the next number automatically. Numbers are not reused after deletion.</div>
+<div class="note auto"><b>Automatic:</b> Control No. and today's date are assigned automatically for each new recipient.</div>
 <div class="note"><b>Internal only:</b> Gender and C/O PD Warrior are saved in the tracker but are never printed in the sponsorship letter.</div>
 <div class="grid">
 <div class="field"><label>Control No. — Automatic</label><input id="control" class="readonly" readonly></div>
-<div class="field"><label>Date</label><input id="date" type="date"></div>
+<div class="field"><label>Date — Automatic</label><input id="date" class="readonly" type="date" readonly></div>
 <div class="field"><label>Recipient Name</label><input id="name" placeholder="Ms. / Mr. Full Name"></div>
 <div class="field"><label>Gender (internal)</label><select id="gender"><option>Female</option><option>Male</option><option>Other / Prefer not to say</option></select></div>
 <div class="field"><label>Company / Address</label><input id="address" placeholder="Company, City"></div>
@@ -43,6 +43,7 @@ let data=JSON.parse(localStorage.getItem(key)||'null')||[
 {control:'003',date:'2026-10-08',name:'Ms. Lorna Almeda',gender:'Female',address:'Pateros City',careof:'Bot',status:'To Generate'}
 ];
 const $=id=>document.getElementById(id);
+function localISODate(){const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 function maxExisting(){return Math.max(0,...data.map(x=>parseInt(x.control)||0));}
 function lastIssued(){return Math.max(parseInt(localStorage.getItem(counterKey)||'0')||0,maxExisting());}
 function nextControl(){return String(lastIssued()+1).padStart(3,'0');}
@@ -50,9 +51,9 @@ function reserveControl(){const n=lastIssued()+1;localStorage.setItem(counterKey
 function save(){localStorage.setItem(key,JSON.stringify(data));render();}
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function fmtDate(v){if(!v)return'';const d=new Date(v+'T00:00:00');return d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});}
-function reset(){editing=null;$('control').value=nextControl();$('date').value=new Date().toISOString().slice(0,10);$('name').value='';$('gender').value='Female';$('address').value='';$('careof').value='';$('saveBtn').textContent='Add Recipient';}
+function reset(){editing=null;$('control').value=nextControl();$('date').value=localISODate();$('name').value='';$('gender').value='Female';$('address').value='';$('careof').value='';$('saveBtn').textContent='Add Recipient';}
 function render(){$('rows').innerHTML=data.map((r,i)=>`<tr><td><b>${esc(r.control)}</b></td><td>${esc(fmtDate(r.date))}</td><td>${esc(r.name)}</td><td>${esc(r.gender)}</td><td>${esc(r.address)}</td><td>${esc(r.careof||'')}</td><td><span class="pill ${r.status==='Generated'?'generated':''}">${esc(r.status)}</span></td><td><div class="actions"><button class="mini" onclick="preview(${i})">Preview</button><button class="mini gen" onclick="generate(${i})">PDF</button><button class="mini" onclick="editRow(${i})">Edit</button><button class="mini" onclick="delRow(${i})">Delete</button></div></td></tr>`).join('');}
-$('saveBtn').onclick=()=>{const isNew=editing===null;const control=isNew?reserveControl():data[editing].control;const r={control,date:$('date').value,name:$('name').value.trim(),gender:$('gender').value,address:$('address').value.trim(),careof:$('careof').value.trim(),status:isNew?'To Generate':data[editing].status};if(!r.date||!r.name||!r.address){if(isNew)localStorage.setItem(counterKey,String(parseInt(control)-1));return alert('Please complete Date, Recipient Name, and Address.');}if(isNew)data.push(r);else data[editing]=r;save();reset();};
+$('saveBtn').onclick=()=>{const isNew=editing===null;const control=isNew?reserveControl():data[editing].control;const date=isNew?localISODate():data[editing].date;const r={control,date,name:$('name').value.trim(),gender:$('gender').value,address:$('address').value.trim(),careof:$('careof').value.trim(),status:isNew?'To Generate':data[editing].status};if(!r.name||!r.address){if(isNew)localStorage.setItem(counterKey,String(parseInt(control)-1));return alert('Please complete Recipient Name and Address.');}if(isNew)data.push(r);else data[editing]=r;save();reset();};
 $('resetBtn').onclick=reset;
 window.editRow=i=>{const r=data[i];editing=i;$('control').value=r.control;$('date').value=r.date;$('name').value=r.name;$('gender').value=r.gender;$('address').value=r.address;$('careof').value=r.careof||'';$('saveBtn').textContent='Save Changes';window.scrollTo({top:0,behavior:'smooth'});};
 window.delRow=i=>{if(confirm('Delete this recipient? The Control No. will not be reused.')){data.splice(i,1);save();reset();}};
